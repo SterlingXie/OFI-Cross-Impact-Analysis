@@ -1,0 +1,102 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+
+\title{Cross-Impact Analysis of Order Flow Imbalance}
+\author{Sterling Xie}
+\date{January 12, 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Abstract}
+This study examines the cross-impact of order flow imbalance (OFI) on price movements in equity markets, with a focus on contemporaneous and predictive dynamics in a multi-asset setting. Using five highly liquid Nasdaq stocks — Apple Inc. (AAPL, Technology), Tesla, Inc. (TSLA, Automobile Manufacturing), Amgen Inc. (AMGN, Biotechnology), Costco Wholesale Corporation (COST, Consumer Retail), and American Electric Power Company, Inc. (AEP, Electrical Utilities) — and Nasdaq ITCH data this paper proposes an integrated OFI variable derived through principal component analysis (PCA) to aggregate multi-level limit order book (LOB) information. This paper finds limited correlation between order flow imbalance analyzed across through the first five market depth levels and log price returns but verifies the capacity to find such correlations in more information-illiquid markets.
+
+\section{Methodology}
+\subsection{OFI Calculation}
+We started with a raw order book dataset and filtered for the specific actions Add and Trade since they are the only actions that affect the order flow imbalance at a given time. We then sort for the market depth levels (from 00 to 04), pre-processing for bid and ask prices and sizes at each level. The data is resampled into 1-minute intervals to compute the mean values of bid and ask prices and sizes for each depth level. This ensures consistency and removes high-frequency noise from the data. For each time point, the order flow is calculated by:\\
+$$ OF_{bid} = sign(\Delta bidPrice) \times \Delta bidSize $$
+$$ OF_{ask} = sign(\Delta askPrice) \times \Delta askSize $$
+where $ OF $ is the order flow.
+Therefore,
+$$ OFI_n = OF_{bid} - OF_{ask} $$
+for depth level $ n $ and where $ OFI $ is the order flow imbalance.
+
+\subsection{PCA Analysis}
+The PCA transformation projects the multi-dimensional OFI data onto a single principal component, capturing the largest variation in the order flow imbalance across levels. The PCA is performed for all market depth levels with one component. This is applied across all tickers discussed above.
+
+\subsection{Cross-Impact Analysis}
+\subsubsection{Contemporaneous}
+The contemporaneous cross-impact examines the relationship between the principal component of the order flow imbalance and the 1-minute log returns at the same timestamp. A linear regression model is used to quantify this relationship:
+$$ logReturn = \beta \times PCA_{OFI} + \epsilon $$,
+which captures the regression coefficient $ \beta $. We analyze the value $ R^2 $ for goodness of fit.
+
+\subsection{Lagged}
+A lagged version of the principal component is created via shifting the original principal component column by a certain lag step in relation to the timestamp. We used steps of 1 minute and 5 minutes. The linear regression is then constructed as:
+$$ logReturn = \beta \times laggedPCA_{OFI} (t - lag) + \epsilon $$
+and is analyzed synonymously with the contemporaneous cross-impact equation.
+
+\section{Results}
+\subsection{Single Ticker Case Analysis of Apple Inc.}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Screenshot 2025-01-12 at 10.28.54 PM.png}
+    \caption{AAPL Order Flow Imbalance Metric vs Log Price Returns}
+    \label{fig:ofi_vs_return}
+\end{figure}
+The clustering of data points near the origin and the $ + $ shaped pattern of the data are indicative of a high-frequency, nosiy market with no clear correlation between the OFI metric and returns, thus a regression coefficient and $ R^2 $ value near zero. This holds for the lagged cross-impact plots as well.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Screenshot 2025-01-12 at 10.36.59 PM.png}
+    \caption{Heat Map of AAPL Feature Correlation}
+    \label{fig:feature_corr}
+\end{figure}
+\noindent There is a relatively weak correlation across the board. The most notable correlation was on the second depth level's 0.80 correlation with the principal component, indicating that the second depth level contributes significantly to the principal component. The principal component feature has a moderately strong negative correlation (-0.64) with the first depth level's OFI. This suggests that the top of the order book inversely affects the principal component.\\\\
+This can motivate more robust machine learning models, such as random forest models that weigh the significance of features (since Figure 1 suggests a weak linear correlation).
+
+\subsection{Aggregated OFI Data}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Screenshot 2025-01-12 at 10.50.30 PM.png}
+    \caption{Heat Map of Integrated OFI Metrics Across All Tickers}
+    \label{fig:pca_ofi_heatmap}
+\end{figure}
+There is again a weak correlation across the board. Interestingly, there are negative correlations between contemporaneous integrated OFI and their lagged counterparts (for the same ticker). There also seems to be overlap in the liquidity or sector of the American Electric Power Company and Amgen, posting a moderately high contemporaneous correlation of 0.27 and a 1 minute lagged correlation of 0.22.\\\\
+In general, all correlation appears to dissipate within 5 minutes meaning that in the highly liquid Nasdaq market, signals are generally only valuable for a minute.
+
+\section{Discussion}
+Overall, there is a large focus on short horizon trading opportunities (between 0-60 second) due to the highly liquid nature of the stock market, and especially the Nasdaq. This is indicated in Figures 4 and 5 by how the $ R^2 $ value generally decays over time and the coefficients are roughly highest between 0 and 1 minute as opposed to the 5 minute mark (especially true for AMGN and AEP).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Screenshot 2025-01-12 at 11.41.59 PM.png}
+    \caption{$R^2$ Decay Over Time}
+    \label{fig:r2}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Screenshot 2025-01-12 at 11.42.14 PM.png}
+    \caption{Price Return vs PCA OFI Coefficients Hover at Zero}
+    \label{fig:coeff}
+\end{figure}
+\subsection{Mean Reversion}
+The negative lagged correlations within the same stock suggest interesting opportunities for mean reversion strategies; this is particularly notable in Tesla's -0.42 correlation between contemporaneous and one minute lag OFI metrics (Figure 3). This is intuitively true: a positive order flow imbalance (buying pressure) typically leads to temporary liquidity imbalances, which attract selling activity to counteract the excess demand and stabilize prices. As a result, a high integrated OFI value in the current period is likely to be followed by lower (or even negative) integrated OFI values in subsequent periods, leading to the observed negative correlation between lagged and current integrated OFI.\\\\
+We can likely confirm and specify this analysis by performing more robust analysis of smaller time frames (i.e. 5 seconds or 30 seconds), requiring a larger time frame of testing data to prevent missing order book data (i.e. lack of buy or sell orders at any market level across each second of order data). Since we know that effect dissipates by 5 minutes, we can likely analyze the equation of the mean reverting effect of large market orders and therefore trade based on the predicted impact of large trades on price (likely through polynomial fitting).\\\\
+Since PCA smooths the variance across OFIs~\cite{Cont23}, we can conclude that principal components of OFI are reflections of directional bias (buy or sell pressure) and therefore are sell and buy signals respectively under mean reverting assumptions at a 60 second lag.
+
+\subsection{Sector Dynamics}
+There are several opportunities for pairs trading. For instance, the American Electric Power Company lagged by a minute has a -0.15 correlation with Amgen, indicating potential for inverse pairs trading. However, this requires rigorous testing to confirm and quantify the relationship.\\\\
+There are also several low-latency opportunities for pairs trading with little lag (requisite on further investigation with lower time horizons), the most prominent of whch being Amgen and the American Electric Power Company (with a correlation of 0.27). Although it is unclear what the liquidity or sector similarities between a biotechnology and an electrical utilities company might stem from, it is an interesting avenue to explore. It will be important to use non-linear machine learning models to explore what the overlap between the two stocks are and create a selective pairs model to trade when such features affect price movement for either asset. In general, Amgen appears to have moderately high correlation with many order imbalances, including 0.18 with Costco and 0.11 with Apple.
+
+\section{Conclusion}
+\subsection{Results}
+In this study, we analyzed the principal component analysis integrated order flow imbalances of AAPL, TSLA, COST, AMGN, and AEP to confirm the explanatory power of contemporaneous cross impact analyses and investigate the predictive power of lagged cross impact analyses. Noting the data only spans one month and is one of the least liquid months (at the end of the year), we find that there are significant indicators of mean reversion for Tesla and significant cross-sector correlations, particularly between the American Electric Power Company and Amgen. 
+
+\subsection{Next Steps}
+For future analyses, we recommend shorter time horizons and larger datasets that have more explanatory power over cross-sector correlations. We also recommend further analysis of the features that affect the correlations which will better inform trading strategies of tickers with high direct and inverse correlation. 
+
+\bibliographystyle{plain}
+\bibliography{ofi}
+
+\end{document}
