@@ -7,11 +7,11 @@ Steps to run this project:
 3. Change depth level by changing the variable in each function header (i.e. levels=5) on the Jupyter notebook. 
 4. Change lag by changing the lag variable when calling the contemporaneous_cross_impact function for each ticker.
 
-[1] Recommended data:
-Databento (Nasdaq TotalView–ITCH, MBP-10 schema)
-Tickers: (AAPL, TSLA, COST, AMGN, AEP)
-LOB Levels: 00 to 04
-Time Period: 1 month
+[1] Recommended data:\\
+Databento (Nasdaq TotalView–ITCH, MBP-10 schema)\\
+Tickers: (AAPL, TSLA, COST, AMGN, AEP)\\
+LOB Levels: 00 to 04\\
+Time Period: 1 month\\
 Download the file with all tickers' data aggregated into one file
 
 Post-customization, all graph generation, data analysis, and regression generation is handled by the notebook. Run all cells in order.
